@@ -9,7 +9,6 @@ O código apresenta uma lista duplamente ligada com operações básicas para in
 #include <stdio.h>
 #include <stdlib.h>
 
-// Estrutura para representar um nó em uma lista duplamente ligada
 typedef struct Node {
     int data;             // Dados armazenados no nó
     struct Node* next;    // Ponteiro para o próximo nó
@@ -77,7 +76,6 @@ void searchValue(int value) {
     printf("Valor %d não encontrado.\n", value);
 }
 
-// Função principal para testar a lista duplamente ligada
 int main() {
     int choice, value;
     
