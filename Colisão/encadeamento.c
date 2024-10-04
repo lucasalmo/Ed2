@@ -69,7 +69,7 @@ Produto *buscar(TabelaHash *tabela, char *nome) {
     Produto *atual = tabela->tabela[indice];
     
     while (atual != NULL) {
-        if (atual->nome == nome) {
+        if (strcmp(atual->nome, nome) == 0) {
             return atual;  // Retorna o produto se encontrado
         }
         atual = atual->proximo;  // Vai para o próximo produto na lista ligada
@@ -84,7 +84,7 @@ void excluir(TabelaHash *tabela, char *nome) {
     Produto *anterior = NULL;
 
     while (atual != NULL) {
-        if (atual->nome == nome) {
+        if (strcmp(atual->nome, nome) == 0) {
             // Se o elemento a ser removido for o primeiro da lista
             if (anterior == NULL) {
                 tabela->tabela[indice] = atual->proximo;  // Remove o primeiro elemento
@@ -166,7 +166,7 @@ int main() {
     printf("\nBuscar um produto:\n");
     Produto *t = buscar(&tabela, "Webcam Logitech HD");
     if (t != NULL) {
-        printf("\nProduto ->\n  -Íncice de Popularidade: %d\n  -Preço: %.2f\n  -Nome: %s\n  -Categoria: %s\n  -Disponibilidade: %d\n",
+        printf("Produto ->\n  -Íncice de Popularidade: %d\n  -Preço: %.2f\n  -Nome: %s\n  -Categoria: %s\n  -Disponibilidade: %d\n",
                 t->indiciePopularidade, t->preco, t->nome, t->categoria, t->disponibilidade);
     } else {
         printf("Produto não encontrado.\n");
