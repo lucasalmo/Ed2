@@ -83,6 +83,20 @@ int sequentialSearch(Product products[], int numProducts, const char* target) {
 int binarySearch(Product products[], int low, int high, const char* target) {
     
 	// Implementar a busca binária aqui
+	while (low <= high) {
+        int mid = (low + high) / 2;  // Calcula o índice do meio
+        
+        // Compara o produto no meio com o alvo
+        int comparison = strcmp(products[mid].name, target);
+
+        if (comparison == 0) {
+            return mid;  // Produto encontrado
+        } else if (comparison < 0) {
+            low = mid + 1;  // Se o produto no meio for menor, busca na metade direita
+        } else {
+            high = mid - 1;  // Se o produto no meio for maior, busca na metade esquerda
+        }
+    }
 	
     return -1; // Produto não encontrado (modificar conforme a implementação)
 }
@@ -91,6 +105,21 @@ int compareByName(const void* a, const void* b) {
     Product* productA = (Product*)a;
     Product* productB = (Product*)b;
     return strcmp(productA->name, productB->name);
+}
+
+// Função para medir o tempo de execução de uma função de busca
+double measureTime(int (*searchFunction)(Product[], int, const char*), Product products[], int numProducts, const char* target) {
+    clock_t start = clock();
+    int result = searchFunction(products, numProducts, target);
+    clock_t end = clock();
+    
+    if (result != -1) {
+        printf("Produto encontrado na posição %d\n", result);
+    } else {
+        printf("Produto não encontrado\n");
+    }
+
+    return ((double)(end - start)) / CLOCKS_PER_SEC;
 }
 
 // Função principal
@@ -107,7 +136,7 @@ int main() {
     printProductList(products, 10); // Exibe apenas os 10 primeiros produtos
 
     // Define o produto alvo para busca
-    char target[MAX_NAME_LENGTH] = "Notebook Dell Inspiron";
+    char target[MAX_NAME_LENGTH] = "Smartphone Samsung Galaxy";
 
     // Espaço para realizar a busca sequencial
     printf("\nBusca sequencial pelo produto '%s':\n", target);
@@ -131,6 +160,10 @@ int main() {
     } else {
         printf("Produto não encontrado na busca binária.\n");
     }
+    
+    double seqTime = measureTime(sequentialSearch, products, MAX_PRODUCTS, target);
+    
+    printf("Tempo de execução da busca sequencial: %.6f segundos\n", seqTime);
 
     return 0;
 }
