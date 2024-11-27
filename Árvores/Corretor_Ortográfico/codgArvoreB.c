@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
 
 #define MAX_KEYS 3 // Ordem da árvore B (número máximo de chaves por nó)
 
@@ -22,7 +21,6 @@ BTreeNode* createBTreeNode(int isLeaf) {
     }
     return node;
 }
-
 
 // Função para dividir um nó cheio
 void splitChild(BTreeNode *parent, int i) {
@@ -57,39 +55,6 @@ void splitChild(BTreeNode *parent, int i) {
     }
     parent->keys[i] = fullChild->keys[MAX_KEYS / 2];
     parent->numKeys++;
-}
-
-
-// Função auxiliar para buscar uma palavra em um nó
-int searchInNode(BTreeNode *node, const char *key) {
-    for (int i = 0; i < node->numKeys; i++) {
-        if (strcmp(node->keys[i], key) == 0) {
-            return 1; // Palavra encontrada
-        }
-    }
-    return 0; // Palavra não encontrada
-}
-
-// Função para buscar uma palavra na Árvore B
-int searchBTree(BTreeNode *root, const char *key) {
-    if (!root) {
-        return 0; // Árvore vazia
-    }
-
-    int i = 0;
-    while (i < root->numKeys && strcmp(key, root->keys[i]) > 0) {
-        i++;
-    }
-
-    if (i < root->numKeys && strcmp(key, root->keys[i]) == 0) {
-        return 1; // Palavra encontrada no nó atual
-    }
-
-    if (root->isLeaf) {
-        return 0; // Palavra não encontrada
-    }
-
-    return searchBTree(root->children[i], key); // Busca no filho correspondente
 }
 
 // Função para inserir uma palavra em um nó não cheio
@@ -141,110 +106,118 @@ void insertBTree(BTreeNode **root, const char *key) {
     }
 }
 
-// Função para imprimir as palavras em ordem lexicográfica
-void printBTree(BTreeNode *root) {
-    if (!root) {
+// Função para imprimir sugestões de palavras a partir de um nó com o prefixo correspondente
+void printSuggestions(BTreeNode *node, const char *prefix) {
+    if (!node) {
         return;
     }
 
-    for (int i = 0; i < root->numKeys; i++) {
-        if (!root->isLeaf) {
-            printBTree(root->children[i]);
-        }
-        printf("%s\n", root->keys[i]);
-    }
-
-    if (!root->isLeaf) {
-        printBTree(root->children[root->numKeys]);
-    }
-}
-
-// Função auxiliar para imprimir as sugestões
-void printSuggestions(BTreeNode *node, const char *prefix) {
     for (int i = 0; i < node->numKeys; i++) {
+        // Verifica se a chave começa com o prefixo
         if (strncmp(node->keys[i], prefix, strlen(prefix)) == 0) {
             printf("%s\n", node->keys[i]);
         }
+
+        // Continua verificando os filhos, se existirem
+        if (!node->isLeaf) {
+            printSuggestions(node->children[i], prefix);
+        }
+    }
+
+    // Explora o último filho, caso existam filhos e o nó não seja folha
+    if (!node->isLeaf) {
+        printSuggestions(node->children[node->numKeys], prefix);
     }
 }
 
-// Função auxiliar para imprimir as sugestões
+// Função principal para encontrar e listar sugestões de palavras com um prefixo
 void suggestWords(BTreeNode *root, const char *prefix) {
     if (root == NULL) {
+        printf("Árvore está vazia ou prefixo não encontrado.\n");
         return;
     }
 
     BTreeNode *currentNode = root;
-    
-    // Percorre a árvore B até encontrar o nó ou subárvore com o prefixo
+
     while (currentNode != NULL) {
         int i = 0;
-        
-        // Busca pela posição da chave que pode conter o prefixo
+
+        // Busca a posição da chave que pode conter o prefixo
         while (i < currentNode->numKeys && strcmp(prefix, currentNode->keys[i]) > 0) {
             i++;
         }
-        
-        // Se encontramos uma chave que começa com o prefixo, processamos o nó
+
+        // Se encontramos uma chave que começa com o prefixo
         if (i < currentNode->numKeys && strncmp(currentNode->keys[i], prefix, strlen(prefix)) == 0) {
-            // Se o nó for folha, imprimimos as palavras com o prefixo
-            if (currentNode->isLeaf) {
-                printSuggestions(currentNode, prefix);
-                return;
-            } else {
-                // Se não for folha, verificamos os filhos
-                printSuggestions(currentNode, prefix);  // Imprime as palavras no nó atual
-                suggestWords(currentNode->children[i], prefix);  // Recursão para o filho relevante
-                return;
-            }
+            // Imprime todas as palavras correspondentes no nó atual
+            printSuggestions(currentNode, prefix);
+            printf("\n");
+            return;
         }
 
-        // Caso o prefixo seja menor que a chave atual, então vamos descer na árvore
+        // Se o nó é folha e o prefixo não foi encontrado
         if (currentNode->isLeaf) {
-            break;  // Não há mais filhos para explorar
+            break;
         }
 
-        currentNode = currentNode->children[i];  // Desce no filho correto
+        // Desce para o filho apropriado
+        currentNode = currentNode->children[i];
     }
+
+    printf("Nenhuma palavra encontrada com o prefixo '%s'.\n\n", prefix);
 }
 
+// Função para carregar palavras do arquivo "dicionario.txt"
+void loadDictionary(BTreeNode **root, const char *filename) {
+    FILE *file = fopen(filename, "r");
+    if (!file) {
+        perror("Erro ao abrir o arquivo");
+        exit(EXIT_FAILURE);
+    }
 
-// Função principal para testar a Árvore B
+    char word[100];
+    while (fgets(word, sizeof(word), file)) {
+        // Remove o caractere de nova linha
+        word[strcspn(word, "\n")] = '\0';
+        insertBTree(root, word);
+    }
+
+    fclose(file);
+}
+
+// Função principal
 int main() {
     BTreeNode *root = NULL;
 
-    // Inserção de palavras
-    insertBTree(&root, "carro");
-    insertBTree(&root, "car");
-    insertBTree(&root, "cat");
-    insertBTree(&root, "dog");
-    insertBTree(&root, "cart");
+    // Carrega o dicionário do arquivo
+    loadDictionary(&root, "dicionario.txt");
 
-    // Busca de palavras
-    //printf("Busca por 'car': %s\n", searchBTree(root, "car") ? "Encontrada" : "Não encontrada");
-   // printf("Busca por 'dog': %s\n", searchBTree(root, "dog") ? "Encontrada" : "Não encontrada");
-   // printf("Busca por 'bat': %s\n", searchBTree(root, "bat") ? "Encontrada" : "Não encontrada");
-    
-    int op=1;
-    
-    do{
-        printf("Pesquisar palavra - 1\n");
-        printf("Fechar programa: -1\n\n");
+    int op = 8;
+    do {
+        printf("Fechar: -1\n");
+        printf("Pesquisar uma palavra: 1\n");
+        printf("Inserir uma palavra: 2\n");
+        printf("Escolha uma opção: ");
         scanf("%d", &op);
-        switch(op){
-            case 1:
-                printf("Digite a palavra a ser procurada: ");
-                char name[10];
-                scanf("%s", name);
-                printf("Resultado da busca: \n");
-                suggestWords(root, name);
-            break;
+        switch (op) {
+            case 1: {
+                char prefix[100];
+                printf("Digite a palavra que deseja procurar: \n");
+                scanf("%s", prefix);
+                printf("Sugestões:\n");
+                suggestWords(root, prefix);
+                break;
+            case 2: {
+                char newWord[100];
+                printf("Digite a palavra a ser inserida: ");
+                scanf("%s", newWord);
+                insertBTree(&root, newWord);
+                printf("Palavra '%s' inserida com sucesso.\n\n", newWord);
+                break;
+            }
+            }
         }
-    }while(op != -1);
-
-    // Exibir todas as palavras
-    //printf("\nPalavras na árvore:\n");
-   // printBTree(root);
+    } while (op != -1);
 
     return 0;
 }
